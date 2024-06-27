@@ -10,6 +10,7 @@ output reg [4:0] reg2_addr_o,
 output reg [4:0] csr_rd_addr_o,
 output reg mem_req,
 output reg [31:0] inst_o,
+output reg [31:0] inst_addr_o,
 output reg [31:0] reg1_data_o,
 output reg [31:0] reg2_data_o,
 output reg reg_wr_en_o,
@@ -26,4 +27,14 @@ wire [4:0] rs1 = inst_i[19:15];
 wire [4:0] rs2 = inst_i[24:20];
 wire [6:0] funct7 = inst_i[31:25];
 
+always@(*) begin
+    inst_o = inst_i;
+    inst_addr_o = inst_addr_i;
+    reg1_data_o = reg1_data_i;
+    reg2_data_o = reg2_data_o;
+    csr_data_i = csr_rd_data_o;
+    csr_rd_addr_o = 0;
+    csr_wr_add_o = 0;
+    csr_wr_en_o = 0;
+    op1_
 endmodule
