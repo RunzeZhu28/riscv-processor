@@ -1,8 +1,8 @@
 module fetch(
 input clk,
 input rst_n,
-input [31:0] inst_i,
-input [31:0] inst_addr_i,
+input [31:0] inst_i,   // from last cycle
+input [31:0] inst_addr_i,  //new instruction
 input [2:0] hold_flag_i,  //pipeline hold
 input [7:0] interrupt_flag_i,
 output [7:0] interrupt_flag_o,
