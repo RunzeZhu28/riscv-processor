@@ -17,7 +17,7 @@ gen_pipe_dff inst_gen_pipe_dff(clk, rst_n, hold_en, 32'b10011, inst_i, inst); //
 assign inst_o = inst;
 
 wire [31:0] inst_addr;
-gen_pipe_dff inst_gen_addr_dff(clk, rst_n, hole_en, 0, inst_addr_i, inst_addr);
+gen_pipe_dff inst_gen_addr_dff(clk, rst_n, hold_en, 0, inst_addr_i, inst_addr);
 assign inst_addr_o = inst_addr;
 
 wire [7:0] interrupt_flag;
