@@ -126,6 +126,26 @@ always@(*) begin
 				endcase
 			end
 		end
+		7'b0000011:begin//load
+			case(funct3)
+				3'b000,3'b001,3'b010,3'b100,3'b101:begin
+					reg1_addr_o = rs1;
+					reg2_addr_o = 0;
+					reg_wr_en_o = 1;
+					reg_wr_addr_o = rd;
+					op1_o = reg1_data_i;
+					op2_o = {{20{inst_i[31]}},inst_i[31:20]};
+				end
+				default:begin
+					reg_wr_en_o <= 0;
+					reg_wr_addr_o <= 0;
+					reg1_addr_o <= 0;
+					reg2_addr_o <= 0;
+					op1_o <= 0;
+					op2_o <= 0;
+				end
+			endcase
+		end
 	 endcase
 end
 
