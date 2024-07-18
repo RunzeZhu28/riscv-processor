@@ -44,6 +44,10 @@ reg jump_flag;
 reg [31:0] jump_addr;
 reg mem_wr_en;
 reg reg_wr_en;
+wire [31:0] comparison_signed;
+wire [31:0] comparison_unsigned;
+wire [31:0] reg_shift;
+wire [31:0] shift_mask;
 
 assign opcode = inst_i[6:0];
 assign rd = inst_i[11:7];
@@ -58,7 +62,10 @@ assign mem_req_o = (interrupt_i == 1) ? 0 : mem_req;
 assign mem_wr_en_o = (interrupt_i == 1) ? 0 : mem_wr_en;
 assign reg_wr_en_o = (interrupt_i == 1) ? 0 : reg_wr_en;
 assign reg_wr_addr_o = reg_wr_addr_i;
-
+assign comparison_signed = {31'b0, $signed(op1_i) < $signed(op2_i)};
+assign comparison_unsigned = {31'b0, op1_i < op2_i};
+assign reg_shift = reg1_data_i >> inst_i[32:20];
+assign shift_mask = 32'hffffffff >> inst_i[24:20];
 
 always@(*) begin
 	mem_req = 1'b0;
@@ -77,7 +84,96 @@ always@(*) begin
 					mem_wr_en = 0;
 					reg_data_o = op1_op2_sum;
 				end
+				3'b010:begin //SLTI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = comparison_signed;
+				end
+				3'b011:begin //SLTIU
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = comparison_unsigned;
+				end
+				3'b100:begin //XORI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = op1_i ^ op2_i;
+				end
+				3'b110:begin //ORI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = op1_i | op2_i ;
+				end
+				3'b111:begin //ANDI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = op1_i & op2_i;
+				end
+				3'b001:begin //SLLI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = reg1_data_i << inst_i[24:20];
+				end
+				3'b101:begin//SRI
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					if(inst_i[30] == 1'b0) begin //SRLI
+						reg_data_o = reg1_data_i >> inst_i[24:20];		
+				end else begin
+						reg_data_o = ({32{reg1_data_i[31]}} & ~shift_mask ) | reg_shift;
+				end		
+				end
+				default:begin
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = 0;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					reg_data_o = 0;				
+				end
 			endcase
+		end
+		
+		7'b0110011:begin//R type
+		
+		
 		end
 	endcase
 	
