@@ -48,6 +48,10 @@ wire [31:0] comparison_signed;
 wire [31:0] comparison_unsigned;
 wire [31:0] reg_shift;
 wire [31:0] shift_mask;
+wire [31:0] reg_shift_2;
+wire [31:0] shift_mask_2;
+wire [1:0]  mem_rd_addr_index;
+wire [1:0]  mem_wr_addr_index;
 
 assign opcode = inst_i[6:0];
 assign rd = inst_i[11:7];
@@ -64,8 +68,11 @@ assign reg_wr_en_o = (interrupt_i == 1) ? 0 : reg_wr_en;
 assign reg_wr_addr_o = reg_wr_addr_i;
 assign comparison_signed = {31'b0, $signed(op1_i) < $signed(op2_i)};
 assign comparison_unsigned = {31'b0, op1_i < op2_i};
-assign reg_shift = reg1_data_i >> inst_i[32:20];
+assign reg_shift = reg1_data_i >> inst_i[24:20];
 assign shift_mask = 32'hffffffff >> inst_i[24:20];
+assign reg_shift_2 = reg1_data_i >> reg2_data_i[4:0];
+assign shift_mask = 32'hffffffff >> reg2_data_i[4:0];
+assign mem_rd_addr_index = (reg1_data_i + {{20{inst_i[31]}}, inst_i[31:20]}) & 2'b11;
 
 always@(*) begin
 	mem_req = 1'b0;
@@ -172,8 +179,227 @@ always@(*) begin
 		end
 		
 		7'b0110011:begin//R type
+			if((funct7 == 7'b0000000) || (funct7 == 7'b0100000)) begin
+				case(funct3)
+					3'b000:begin
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						if(inst_i[30] == 1'b1) begin  //ADD
+							reg_data_o = op1_op2_sum;	
+						end
+						else begin
+							reg_data_o = op1_i - op2_i;
+						end
+					end
+					3'b001:begin //SLL
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = op1_i << op2_i[4:0];
+					end
+					3'b010:begin //SLT
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = comparison_signed;					
+					end
+					3'b011:begin //SLTU
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = comparison_unsigned;	
+					end
+					3'b100:begin //XOR
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = op1_i ^ op2_i;					
+					end
+					3'b101:begin //SR
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						if(inst_i[30] == 1'b0) begin //SRL
+							reg_data_o = reg1_data_i >> reg2_data_i[4:0];		
+						end else begin //SRA
+							reg_data_o = ({32{reg1_data_i[31]}} & ~shift_mask_2 ) | reg_shift_2;
+						end
+					end
+					3'b110:begin //OR
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = op1_i | op2_i;
+					end
+					3'b111:begin //AND
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = op1_i & op2_i;
+					end
+					default:begin
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = 0;
+					end
+				endcase
+			end else begin
+						hold_flag_o = 0;
+						jump_flag = 0;
+						jump_addr = 0;
+						mem_data_o = 0;
+						mem_rd_addr_o = 0;
+						mem_wr_addr_o = 0;
+						mem_wr_en = 0;
+						reg_data_o = 0;
+			end
+		end
 		
-		
+		7'b0000011:begin//load
+			case(funct3)
+				3'b000:begin //LB
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 1;
+					case(mem_rd_addr_index)
+						2'b00:begin
+							reg_data_o = {{24{mem_data_i[7]}},mem_data_i[7:0]};
+						end
+						2'b01:begin
+							reg_data_o = {{24{mem_data_i[15]}},mem_data_i[15:8]};
+						end
+						2'b10:begin
+							reg_data_o = {{24{mem_data_i[23]}},mem_data_i[23:16]};
+						end
+						2'b11:begin
+							reg_data_o = {{24{mem_data_i[31]}},mem_data_i[31:24]};
+						end					
+					endcase
+				end
+				3'b001:begin  //LH
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 1;
+					if(mem_rd_addr_index == 2'b0) begin
+						reg_data_o = {{16{mem_data_i[15]}},mem_data_i[15:0]};
+					end else begin
+						reg_data_o = {{16{mem_data_i[31]}},mem_data_i[31:16]};
+					end
+				end
+				3'b010:begin //LW
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 1;
+					reg_data_o = mem_data_i;
+				end
+				3'b100:begin //LBU
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 1;
+					case(mem_rd_addr_index)
+						2'b00:begin
+							reg_data_o = {24'b0,mem_data_i[7:0]};
+						end
+						2'b01:begin
+							reg_data_o = {24'b0,mem_data_i[15:8]};
+						end
+						2'b10:begin
+							reg_data_o = {24'b0,mem_data_i[23:16]};
+						end
+						2'b11:begin
+							reg_data_o = {24'b0,mem_data_i[31:24]};
+						end					
+					endcase
+				end
+				3'b101:begin //LHU
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 1;
+					if(mem_rd_addr_index == 2'b0) begin
+						reg_data_o = {16'b0,mem_data_i[15:0]};
+					end else begin
+						reg_data_o = {16'b0,mem_data_i[31:16]};
+					end
+				end
+				default:begin
+					hold_flag_o = 0;
+					jump_flag = 0;
+					jump_addr = 0;
+					mem_data_o = 0;
+					mem_rd_addr_o = op1_op2_sum;
+					mem_wr_addr_o = 0;
+					mem_wr_en = 0;
+					mem_req = 0;
+					reg_data_o = 0;
+				end
+			endcase
+		end
+		7'b0100011:begin //store
+		end
+		7'b1100011:begin //B type
 		end
 	endcase
 	

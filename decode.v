@@ -20,7 +20,7 @@ output reg [31:0] reg2_data_o,
 output reg reg_wr_en_o,
 output reg [4:0] reg_wr_addr_o,
 output reg csr_wr_en_o,
-output reg [31:0] csr_rd_data_o,
+output reg [31:0] csr_data_o,
 output reg [31:0] csr_wr_addr_o
 );
 
@@ -36,7 +36,7 @@ always@(*) begin
     inst_addr_o = inst_addr_i;
     reg1_data_o = reg1_data_i;
     reg2_data_o = reg2_data_i;
-    csr_rd_data_o = csr_data_i;
+    csr_data_o = csr_data_i;
     csr_rd_addr_o = 0;
     csr_wr_addr_o = 0;
     csr_wr_en_o = 0;
@@ -71,7 +71,7 @@ always@(*) begin
 		end
 		
 		7'b0110011:begin//R type
-			if((funct7 == 7'b0) || (funct7 == 7'b0100000)) begin  //base instruction
+			if((funct7 == 7'b000000) || (funct7 == 7'b0100000)) begin  //base instruction
 				case (funct3)
 					3'b000,3'b010,3'b011,3'b100,3'b110,3'b111,3'b001,3'b101:
 					begin
@@ -94,7 +94,7 @@ always@(*) begin
 					end
 				endcase
 			end
-			else if (funct7 == 7'b1) begin//standard extension 
+			else if (funct7 == 7'b0000001) begin//standard extension 
 				case(funct3)
 					3'b000,3'b001,3'b010,3'b011:begin  //multiplication
 						reg_wr_en_o = 1;
