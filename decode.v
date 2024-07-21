@@ -168,7 +168,7 @@ always@(*) begin
 			endcase
 		end
 		
-		7'b1100011:begin//B type
+		7'b1100011:begin//Branch type
 			case(funct3)
 				3'b000,3'b001,3'b100,3'b101,3'b110,3'b111:begin
 					reg1_addr_o = rs1;
@@ -265,7 +265,7 @@ always@(*) begin
 					csr_wr_en_o = 1;
 				end
 				3'b101,3'b110,3'b111:begin
-					reg1_addr_o = rs1;
+					reg1_addr_o = 0;
 					reg2_addr_o = 0;
 					reg_wr_en_o = 1;
 					reg_wr_addr_o = rd;
