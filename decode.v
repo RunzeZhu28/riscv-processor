@@ -94,37 +94,37 @@ always@(*) begin
 					end
 				endcase
 			end
-			else if (funct7 == 7'b0000001) begin//standard extension 
-				case(funct3)
-					3'b000,3'b001,3'b010,3'b011:begin  //multiplication
-						reg_wr_en_o = 1;
-						reg_wr_addr_o = rd;
-						reg1_addr_o = rs1;
-						reg2_addr_o = rs2;
-						op1_o = reg1_data_i;
-						op2_o = reg2_data_i;
-					end
-					
-					3'b100, 3'b101, 3'b110, 3'b111:begin // division, may change later
-						reg_wr_en_o = 1;
-						reg_wr_addr_o = rd;
-						reg1_addr_o = rs1;
-						reg2_addr_o = rs2;
-						op1_o = reg1_data_i;
-						op2_o = reg2_data_i;
-					end
-					
-					default:
-					begin
-						reg_wr_en_o = 0;
-						reg_wr_addr_o = 0;
-						reg1_addr_o = 0;
-						reg2_addr_o = 0;
-						op1_o = 0;
-						op2_o = 0;
-					end
-				endcase
-			end
+//			else if (funct7 == 7'b0000001) begin//standard extension 
+//				case(funct3)
+//					3'b000,3'b001,3'b010,3'b011:begin  //multiplication
+//						reg_wr_en_o = 1;
+//						reg_wr_addr_o = rd;
+//						reg1_addr_o = rs1;
+//						reg2_addr_o = rs2;
+//						op1_o = reg1_data_i;
+//						op2_o = reg2_data_i;
+//					end
+//					
+//					3'b100, 3'b101, 3'b110, 3'b111:begin // division, may change later
+//						reg_wr_en_o = 1;
+//						reg_wr_addr_o = rd;
+//						reg1_addr_o = rs1;
+//						reg2_addr_o = rs2;
+//						op1_o = reg1_data_i;
+//						op2_o = reg2_data_i;
+//					end
+//					
+//					default:
+//					begin
+//						reg_wr_en_o = 0;
+//						reg_wr_addr_o = 0;
+//						reg1_addr_o = 0;
+//						reg2_addr_o = 0;
+//						op1_o = 0;
+//						op2_o = 0;
+//					end
+//				endcase
+//			end
 		end
 		7'b0000011:begin//load
 			case(funct3)
