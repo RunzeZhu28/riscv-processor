@@ -56,17 +56,114 @@ always@(*)begin
 end
 
 always@(posedge clk)begin
-	if(rst_n == 0)begin
+	if(rst_n == 0) begin
 		csr_state <= s_csr_idle;
 		cause <= 0;
 		inst_addr <= 0;
 	end else begin
 		case(csr_state)
 			s_csr_idle:begin
-				
+				if(interrupt_state == s_interrupt_sync_assert) begin
+					csr_state <= s_csr_mepc;
+					if(jump_flag_i == 1) begin
+						inst_addr <= jump_addr_i - 4;
+					end else begin
+						inst_addr <= inst_addr_i;
+					end
+					case(inst_i)
+						32'h00000073:begin //ECALL
+							cause <= 32'd11;
+						end
+						32'h00100073:begin //EBREAK
+							cause <= 32'd3;
+						end
+						default:begin
+							cause <= 32'd10;
+						end
+					endcase
+				end else if (interrupt_state == s_interrupt_async_assert)begin
+					cause <= 32'h80000004; //timer
+					csr_state <= s_csr_mepc;
+					if (jump_flag_i == 1)begin
+						inst_addr <= jump_addr_i;
+					end else begin
+						inst_addr <= inst_addr_i;
+					end
+				end else if (interrupt_state == s_interrupt_mret) begin
+					csr_state <= s_csr_mstatus_mret;
+				end
+			end
+			s_csr_mepc: begin
+				csr_state <= s_csr_mstatus;
+			end
+			s_csr_mstatus: begin
+				csr_state <= s_csr_mcause;
+			end
+			s_csr_mstatus_mret:begin
+				csr_state <= s_csr_idle;
+			end
+			default: begin
+				csr_state <= s_csr_idle;
 			end
 		endcase
 	end
 end
 
+always@(posedge clk)begin
+	if(rst_n == 0) begin
+		csr_wr_en_o <= 0;
+		csr_wr_addr_o <= 0;
+		data_o <= 0;
+	end else begin
+		case(csr_state)
+			s_csr_mepc: begin
+				csr_wr_en_o <= 1;
+				csr_wr_addr_o <= {20'h0,12'h341};   //csr_mepc
+				data_o <= inst_addr;
+			end
+			s_csr_mcause: begin
+				csr_wr_en_o <= 1;
+				csr_wr_addr_o <= {20'h0,12'h342};   //csr_mcause
+				data_o <= cause;
+			end
+			s_csr_mstatus:begin
+				csr_wr_en_o <= 1;
+				csr_wr_addr_o <= {20'h0,12'h300};   //csr_mstatus
+				data_o <= {csr_mstatus[31:8],csr_mstatus[3],csr_mstatus[6:4], 1'b0, csr_mstatus[2:0]};//MPIE = MIE,MIE = 0, pause other interrupt
+			end
+			s_csr_mstatus_mret: begin
+				csr_wr_en_o <= 1;
+				csr_wr_addr_o <= {20'h0,12'h300};   //csr_mstatus
+				data_o <= {csr_mstatus[31:8], 1'b1, csr_mstatus[6:4], csr_mstatus[7],csr_mstatus[2:0]};
+			end
+			default: begin
+				csr_wr_en_o <= 0;
+				csr_wr_addr_o <= 0;
+				data_o <= 0;
+			end
+		endcase
+	end
+end
+
+always@(posedge clk)begin
+	if(rst_n == 0) begin
+		interrupt_assert_o <= 0;
+		interrupt_addr_o <= 0;
+	end else begin
+		case (csr_state)
+			s_csr_mcause:begin
+				interrupt_assert_o <= 1;
+				interrupt_addr_o <= csr_mtvec;
+			end
+			s_csr_mstatus_mret:begin
+				interrupt_assert_o <= 1;
+				interrupt_addr_o <= csr_mepc;
+			end
+			default:begin
+				interrupt_assert_o <= 0;
+				interrupt_addr_o <= 0;
+			end
+		endcase
+	end
+end
 endmodule
