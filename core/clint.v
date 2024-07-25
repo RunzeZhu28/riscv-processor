@@ -54,4 +54,19 @@ always@(*)begin
 		end
 	end
 end
+
+always@(posedge clk)begin
+	if(rst_n == 0)begin
+		csr_state <= s_csr_idle;
+		cause <= 0;
+		inst_addr <= 0;
+	end else begin
+		case(csr_state)
+			s_csr_idle:begin
+				
+			end
+		endcase
+	end
+end
+
 endmodule
