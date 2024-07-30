@@ -41,7 +41,7 @@ wire clint_csr_wr_en_o;
 wire [31:0] clint_csr_wr_addr_o;
 wire [31:0] clint_csr_rd_addr_o;
 wire [31:0] clint_data_o;
-wire [31:0] global_interrupt_en_o;
+wire [31:0] csr_global_interrupt_en_o;
 wire [31:0] csr_clint_data_o;
 wire [31:0] clint_csr_mtvec;
 wire [31:0] clint_csr_mepc;
@@ -83,6 +83,7 @@ wire [31:0] ex_mem_wr_data_o;
 wire ex_mem_req_o;
 wire clint_interrupt_flag_o;
 wire [31:0] clint_interrupt_addr_o;
+wire [31:0] decode_csr_rd_addr_o;
 assign inst_addr_o = pc_o;
 assign perip_addr_o = (ex_mem_wr_en_o == 1)? ex_mem_wr_addr_o : ex_mem_rd_addr_o;
 assign perip_data_o = ex_mem_wr_data_o;
@@ -117,9 +118,9 @@ register register_inst(
 .wr_en_i(ex_reg_wr_en_o),
 .wr_add_i(ex_reg_wr_addr_o),
 .wr_data_i(ex_reg_wr_data_o),
-.jtag_en_i(jtag_reg_wr_en_o),
+.jtag_en_i(jtag_reg_wr_en_i),
 .jtag_add_i(jtag_reg_addr_i),
-.jtag_data_i(jtag_data_i),
+.jtag_data_i(jtag_reg_data_i),
 .r_add1_i(decode_reg1_addr_o),
 .r_add2_i(decode_reg2_addr_o),
 .r_data1_o(decode_reg1_data_i),
@@ -139,7 +140,7 @@ csr_reg csr_reg_inst(
 .clint_rd_addr_i(clint_csr_rd_addr_o),
 .clint_wr_addr_i(clint_csr_wr_addr_o),
 .clint_data_i(clint_data_o),
-.global_interrupt_en_o(global_interrupt_en_o),
+.global_interrupt_en_o(csr_global_interrupt_en_o),
 .clint_data_o(csr_clint_data_o),
 .clint_csr_mtvec(clint_csr_mtvec),
 .clint_csr_mepc(clint_csr_mepc),
@@ -154,7 +155,7 @@ fetch fetch_inst(
 .inst_i(inst_data_i),  
 .inst_addr_i(pc_o),  
 .hold_flag_i(ctrl_hold_flag_o),  
-.interrupt_flag_i(interrupt_flag_i),
+.interrupt_flag_i(interrupt_i),
 .interrupt_flag_o(fetch_interrupt_flag_o),
 .inst_o(fetch_inst_o),
 .inst_addr_o(fetch_addr_o)
@@ -242,7 +243,7 @@ execution execution_inst(
 .mem_wr_addr_o(ex_mem_wr_addr_o),
 .mem_wr_en_o(ex_mem_wr_en_o),
 .mem_req_o(ex_mem_req_o),
-.reg_data_o(ex_reg_data_o),
+.reg_data_o(ex_reg_wr_data_o),
 .reg_wr_en_o(ex_reg_wr_en_o),
 .reg_wr_addr_o(ex_reg_wr_addr_o),
 .csr_data_o(ex_csr_data_o),
@@ -256,15 +257,15 @@ clint clint_inst(
 .clk(clk),
 .rst_n(rst_n),
 .interrupt_flag_i(fetch_interrupt_flag_o),
-.inst_i(ferch_inst_o),
-.inst_addr_i(fetch_inst_addr_o),
+.inst_i(fetch_inst_o),
+.inst_addr_i(decode_inst_addr_o),
 .jump_flag_i(ex_jump_flag_o),
 .jump_addr_i(ex_jump_addr_o),
 .hold_flag_i(ctrl_hold_flag_o),
 .data_i(csr_clint_data_o),
-.csr_mtvec(clint_mtvec),
-.csr_mepc(clint_mepc),
-.csr_mstatus(csr_mstatus),
+.csr_mtvec(clint_csr_mtvec),
+.csr_mepc(clint_csr_mepc),
+.csr_mstatus(clint_csr_mstatus),
 .global_interrupt_en_i(csr_global_interrupt_en_o),
 .hold_flag_o(clint_hold_flag_o),
 .csr_wr_en_o(clint_csr_wr_en_o),
