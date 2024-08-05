@@ -70,7 +70,7 @@ assign comparison_unsigned = {31'b0, op1_i < op2_i};
 assign reg_shift = reg1_data_i >> inst_i[24:20];
 assign shift_mask = 32'hffffffff >> inst_i[24:20];
 assign reg_shift_2 = reg1_data_i >> reg2_data_i[4:0];
-assign shift_mask = 32'hffffffff >> reg2_data_i[4:0];
+assign shift_mask_2 = 32'hffffffff >> reg2_data_i[4:0];
 assign mem_rd_addr_index = (reg1_data_i + {{20{inst_i[31]}}, inst_i[31:20]}) & 2'b11;
 assign mem_wr_addr_index = (reg1_data_i + {{20{inst_i[31]}}, inst_i[31:25],inst_i[11:7]}) & 2'b11;
 assign op1_eq_op2 = (op1_i == op2_i);
